@@ -1,6 +1,7 @@
 {
-  "name": "ollama-micro",
-  "version": "1.0.0",
+  "name": "core-link-inference",
+  "version": "0.0.1",
+  "private": true,
   "description": "Micro API for Ollama with NestJS and Bun",
   "scripts": {
     "dev": "nest build && bun dist/main.js",
