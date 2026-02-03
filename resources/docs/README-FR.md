@@ -1,8 +1,9 @@
-[English](README.md) | Français
+[🇬🇧 English](../../README.md)
 
 # Core Link Inference - v0.0.1
 
-API NestJS micro pour Ollama avec Bun runtime. Interface d'API multi-format incluant des endpoints compatibles avec l'API OpenAI pour des modèles Ollama locaux accessibles depuis n'importe quel périphérique sur le même réseau local.
+API NestJS micro pour Ollama avec Bun runtime. Interface d'API multi-format incluant des endpoints compatibles avec l'
+API OpenAI pour des modèles Ollama locaux accessibles depuis n'importe quel périphérique sur le même réseau local.
 
 ## Installation
 

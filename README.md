@@ -1,4 +1,4 @@
-English | [Français](README-FR.md)
+[🇫🇷 Français](resources/docs/README-FR.md)
 
 # Core Link Inference - v0.0.1
 
