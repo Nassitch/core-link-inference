@@ -11,7 +11,7 @@ export class AuthGuard implements CanActivate {
     }
 
     const token = authorization.slice(7);
-    if (token !== process.env.API_TOKEN) {
+    if (token !== process.env.API_KEY) {
       throw new UnauthorizedException();
     }
 
