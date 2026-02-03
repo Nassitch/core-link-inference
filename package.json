@@ -1,0 +1,26 @@
+{
+  "name": "ollama-micro",
+  "version": "1.0.0",
+  "description": "Micro API for Ollama with NestJS and Bun",
+  "scripts": {
+    "dev": "nest build && bun dist/main.js",
+    "build": "nest build",
+    "start": "nest build && bun start:prod",
+    "start:prod": "bun dist/main.js"
+  },
+  "dependencies": {
+    "@nestjs/common": "^11.1.12",
+    "@nestjs/core": "^11.1.12",
+    "@nestjs/platform-express": "^11.1.12",
+    "reflect-metadata": "^0.2.2"
+  },
+  "devDependencies": {
+    "@nestjs/cli": "^11.0.16",
+    "@types/express": "^5.0.6",
+    "@types/node": "^20.19.30",
+    "typescript": "^5.4.5"
+  },
+  "engines": {
+    "bun": ">=1.0.0"
+  }
+}
