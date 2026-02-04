@@ -2,8 +2,11 @@
 
 # Core Link Inference - v0.0.1
 
-API NestJS micro pour Ollama avec Bun runtime. Interface d'API multi-format incluant des endpoints compatibles avec l'
-API OpenAI pour des modèles Ollama locaux accessibles depuis n'importe quel périphérique sur le même réseau local.
+Une **micro-API NestJS** pour Ollama utilisant **Bun** comme runtime. Elle propose une interface API multi-format avec
+des endpoints compatibles OpenAI pour accéder aux modèles Ollama locaux depuis n'importe quel appareil sur le même
+réseau local.
+
+---
 
 ## Installation
 
@@ -11,30 +14,36 @@ API OpenAI pour des modèles Ollama locaux accessibles depuis n'importe quel pé
 bun install
 ```
 
-## Démarrage
+---
+
+## Exécution de l'API
 
 ```bash
 # Mode développement
 bun run dev
 
-# Build uniquement
+# Construction uniquement
 bun run build
 
 # Production
 bun run start:prod
 ```
 
+---
+
 ## Endpoints API
 
-### Santé
+### Vérification de santé
 
-`GET /health` - Point de contrôle de santé
+`GET /health` - Point de vérification de santé
+
+---
 
 ### Endpoints Ollama
 
-#### Chat / Complétion - Format OpenAI Compatible
+#### Chat/Complétion - Format compatible OpenAI
 
-`POST /v1/chat/completions` - Endpoint de complétion de chat compatible avec l'API OpenAI
+`POST /v1/chat/completions` - Endpoint de complétion de chat compatible OpenAI
 
 ```bash
 curl -X POST http://localhost:8000/v1/chat/completions \
@@ -59,6 +68,8 @@ curl -X POST http://localhost:8000/v1/completions \
   }'
 ```
 
+---
+
 #### Modèles
 
 `GET /v1/models` - Liste des modèles disponibles
@@ -68,12 +79,14 @@ curl http://localhost:8000/v1/models \
   -H "Authorization: Bearer YOUR_API_KEY"
 ```
 
-`GET /v1/models/:modelId` - Informations sur un modèle spécifique
+`GET /v1/models/:modelId` - Détails d'un modèle spécifique
 
 ```bash
 curl http://localhost:8000/v1/models/llama2 \
   -H "Authorization: Bearer YOUR_API_KEY"
 ```
+
+---
 
 #### Embeddings
 
@@ -89,9 +102,11 @@ curl -X POST http://localhost:8000/v1/embeddings \
   }'
 ```
 
-#### Réponses Custom
+---
 
-`POST /v1/responses` - Endpoint de réponses étendu avec support de streaming
+#### Réponses Personnalisées
+
+`POST /v1/responses` - Endpoint de réponse étendu avec support du streaming
 
 ```bash
 curl -X POST http://localhost:8000/v1/responses \
@@ -103,68 +118,78 @@ curl -X POST http://localhost:8000/v1/responses \
   }'
 ```
 
+---
+
 ## Configuration
 
-Variable d'environnement requise pour le fichier `.env` :
+Variables d'environnement requises dans le fichier `.env` :
 
 ```
 PORT=8000           # Port du serveur
-HOST=0.0.0.0        # Host du serveur
-API_key=your_secret_key  # Token d'authentification
+HOST=0.0.0.0        # Adresse du serveur
+API_KEY=your_secret_key  # Clé d'authentification
 OLLAMA_URL=http://localhost:11434  # URL du serveur Ollama
 ```
+
+---
 
 ## Architecture
 
 ```
 _core_link_inference/
 ├── src/
-│   ├── app.module.ts                # Module racine NestJS
-│   ├── main.ts                      # Serveur setup et guards globaux
+│   ├── app.module.ts                # Module principal NestJS
+│   ├── main.ts                      # Configuration du serveur et gardes globaux
 │   ├── guards/
-│   │   └── auth.guard.ts            # Guard d'authentification (Bearer token)
+│   │   └── auth.guard.ts            # Garde d'authentification avec token Bearer
 │   └── modules/
 │       ├── health/
-│       │   ├── health.controller.ts # Endpoint de santé
-│       │   └── health.module.ts     # Module de santé
+│       │   ├── health.controller.ts # Contrôleur de vérification de santé
+│       │   └── health.module.ts     # Module de vérification de santé
 │       ├── openai/
-│       │   ├── openai.controller.ts # Endpoints OpenAI compatible
+│       │   ├── openai.controller.ts # Endpoints compatibles OpenAI
 │       │   ├── openai.module.ts     # Module wrapper OpenAI
 │       │   └── ollama.service.ts    # Service Ollama
 │       └── ollama/
 │           └── ollama.service.ts    # Service Ollama
-├── dist/                            # Compilation JS
+├── dist/                            # Fichiers compilés en JS
 ├── package.json
 ├── .env
 ├── nest-cli.json
 └── tsconfig.json
 ```
 
-## Développement
+---
 
-### Philosophie
+## Philosophie de Développement
 
-- Architecture modulaire avec organisation par fonctionnalité
-- Support de plusieurs formats API (OpenAI, custom, streaming)
-- Authentification sécurisée avec Bearer tokens
-- Structure de code propre et maintenable
-- TypeScript pour la sécurité des types
-- Développement structuré avec decorators NestJS
-- Focus sur l'extensibilité et la complétude des fonctionnalités
+- **Architecture modulaire** organisée par fonctionnalité
+- **Support multi-format API** (OpenAI, personnalisé, streaming)
+- **Authentification sécurisée** avec tokens Bearer
+- **Code propre et maintenable** avec les décorateurs NestJS
+- **TypeScript** pour la sécurité des types
+- **Extensible** et complet en fonctionnalités
+- **Tests complets** avec Jest
+
+---
 
 ## Authentification
 
-Tous les endpoints API nécessitent l'authentification Bearer token via l'en-tête `Authorization`.
+Tous les endpoints API nécessitent une **authentification par token Bearer** via l'en-tête `Authorization` :
 
 ```
 Authorization: Bearer YOUR_API_KEY
 ```
 
-## Tech Stack
+---
+
+## Stack Technique
 
 - **Runtime** : Bun
 - **Framework** : NestJS
-- **TypeScript** : ES2022
-- **Module** : ES modules (nodenext)
-- **Client HTTP** : Fetch native / Node.js
-- **Auth** : Bearer tokens
+- **Langage** : TypeScript (ES2022)
+- **Modules** : ES Modules (Nodenext)
+- **Client HTTP** : Fetch natif / Node.js
+- **Authentification** : Tokens Bearer
+
+---

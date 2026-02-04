@@ -168,6 +168,7 @@ _core_link_inference/
 - **Clean, maintainable code** with NestJS decorators
 - **TypeScript** for type safety
 - **Extensible** and feature-complete
+- **Comprehensive testing** with Jest
 
 ---
 
