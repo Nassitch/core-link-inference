@@ -1,7 +1,10 @@
 import { CanActivate, ExecutionContext, Injectable, UnauthorizedException } from '@nestjs/common';
+import { EnvironmentConfig } from '../config/environment.config.js';
 
 @Injectable()
 export class AuthGuard implements CanActivate {
+  constructor(private readonly config: EnvironmentConfig) {}
+
   canActivate(context: ExecutionContext): boolean {
     const request = context.switchToHttp().getRequest();
     const authorization = request.headers['authorization'];
@@ -11,7 +14,7 @@ export class AuthGuard implements CanActivate {
     }
 
     const token = authorization.slice(7);
-    if (token !== process.env.API_KEY) {
+    if (token !== this.config.apiKey) {
       throw new UnauthorizedException();
     }
 

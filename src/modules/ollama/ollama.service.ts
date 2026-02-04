@@ -1,9 +1,14 @@
-import {Injectable} from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
+import { EnvironmentConfig } from '../../config/environment.config.js';
 
 @Injectable()
 export class OllamaService {
-    private readonly baseUrl: string = process.env.OLLAMA_URL ?? 'http://localhost:11434';
+    private readonly baseUrl: string;
     private readonly timeout: number = 120000;
+
+    constructor(private readonly config: EnvironmentConfig) {
+        this.baseUrl = config.ollamaUrl;
+    }
 
     private async request(endpoint: string, options?: RequestInit): Promise<any> {
         const response: Response = await fetch(`${this.baseUrl}${endpoint}`, {
