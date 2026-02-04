@@ -7,7 +7,9 @@
     "dev": "nest build && bun dist/main.js",
     "build": "nest build",
     "start": "nest build && bun start:prod",
-    "start:prod": "bun dist/main.js"
+    "start:prod": "bun dist/main.js",
+    "test:config": "bun run tests/config-test.ts",
+    "test": "jest"
   },
   "dependencies": {
     "@nestjs/common": "^11.1.12",
@@ -17,8 +19,12 @@
   },
   "devDependencies": {
     "@nestjs/cli": "^11.0.16",
+    "@nestjs/testing": "^11.1.13",
     "@types/express": "^5.0.6",
+    "@types/jest": "^30.0.0",
     "@types/node": "^20.19.30",
+    "jest": "^30.2.0",
+    "ts-jest": "^29.4.6",
     "typescript": "^5.4.5"
   },
   "engines": {
