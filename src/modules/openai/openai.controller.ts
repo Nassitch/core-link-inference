@@ -1,5 +1,5 @@
 import {Controller, Post, Get, Body, Res, Param, HttpException, HttpStatus} from '@nestjs/common';
-import {Response} from 'express';
+import type {Response} from 'express';
 import {OllamaService} from '../ollama/ollama.service.js';
 import {OpenAIService} from './openai.service.js';
 import type {ChatCompletionRequest, ChatCompletionResponse, ChatMessage} from '../../types/openai.ts';
