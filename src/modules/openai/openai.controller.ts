@@ -3,6 +3,8 @@ import {OllamaService} from '../ollama/ollama.service.js';
 import {OpenAIService} from './openai.service.js';
 import type {ChatCompletionRequest, ChatCompletionResponse, ChatMessage} from '../../types/openai.ts';
 import type {OpenAIRequestType} from '../../types/openai.mod.ts';
+import type {ErrorType, ResponseType} from '../../types/response.ts';
+import {OllamaChatResponse} from "../../types/ollama";
 
 @Controller('v1')
 export class OpenAIController {
@@ -13,7 +15,7 @@ export class OpenAIController {
     }
 
     @Post('chat/completions')
-    public async chatCompletion(@Body() body: ChatCompletionRequest): Promise<any> {
+    public async chatCompletion(@Body() body: ChatCompletionRequest): Promise<ChatCompletionResponse | ErrorType> {
         const {model, messages, stream = false} = body;
 
         if (!model || !messages?.length) {
@@ -23,15 +25,14 @@ export class OpenAIController {
         }
 
         if (stream) {
-            return { error: 'Streaming not yet implemented for Fastify' };
+            return {error: 'Streaming not yet implemented for Fastify'};
         }
 
-        const response: ChatCompletionResponse = await this.openaiService.chatCompletion(body);
-        return response;
+        return await this.openaiService.chatCompletion(body);
     }
 
     @Post('responses')
-    public async createResponse(@Body() body: OpenAIRequestType): Promise<any> {
+    public async createResponse(@Body() body: OpenAIRequestType): Promise<ResponseType | ErrorType> {
         const {model, input, stream = false} = body;
 
         if (!model || !input) {
@@ -43,10 +44,10 @@ export class OpenAIController {
         const messages: ChatMessage[] = this.openaiService.convertInputToMessages(input);
 
         if (stream) {
-            return { error: 'Streaming not yet implemented for Fastify' };
+            return {error: 'Streaming not yet implemented for Fastify'};
         }
 
-        const content: string = await this.ollamaService.chatCompletion(model, messages);
+        const ollamaResponse: OllamaChatResponse = await this.ollamaService.chatCompletion(model, messages);
         const responseId = `resp-${crypto.randomUUID()}`;
 
         return {
@@ -58,7 +59,7 @@ export class OpenAIController {
                 type: 'message',
                 id: `msg-${crypto.randomUUID()}`,
                 role: 'assistant',
-                content: [{type: 'output_text', text: content}],
+                content: [{type: 'output_text', text: ollamaResponse.message.content}],
             }],
             usage: {
                 input_tokens: 0,
@@ -70,17 +71,17 @@ export class OpenAIController {
     }
 
     @Get('models')
-    public async listModels(): Promise<any> {
+    public async listModels(): Promise<{ name: string }[]> {
         return this.openaiService.listModels();
     }
 
     @Get('models/:modelId')
-    public async getModel(@Param('modelId') modelId: string): Promise<any> {
+    public async getModel(@Param('modelId') modelId: string): Promise<{ name: string } | undefined> {
         return this.openaiService.getModel(modelId);
     }
 
     @Post('completions')
-    public async textCompletion(@Body() body: OpenAIRequestType): Promise<any> {
+    public async textCompletion(@Body() body: OpenAIRequestType): Promise<ChatCompletionResponse | ErrorType> {
         const {model, prompt, stream = false} = body;
 
         if (!model || !prompt) {
@@ -90,15 +91,14 @@ export class OpenAIController {
         }
 
         if (stream) {
-            return { error: 'Streaming not yet implemented for Fastify' };
+            return {error: 'Streaming not yet implemented for Fastify'};
         }
 
-        const response: ChatCompletionResponse = await this.openaiService.textCompletion(body);
-        return response;
+        return await this.openaiService.textCompletion(body);
     }
 
     @Post('embeddings')
-    public async createEmbeddings(@Body() body: OpenAIRequestType): Promise<any> {
+    public async createEmbeddings(@Body() body: OpenAIRequestType): Promise<number[][]> {
         const {model, input} = body;
 
         if (!model || !input) {
