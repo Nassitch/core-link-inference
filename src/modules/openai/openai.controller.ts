@@ -1,5 +1,4 @@
-import {Controller, Post, Get, Body, Res, Param, HttpException, HttpStatus} from '@nestjs/common';
-import type {Response} from 'express';
+import {Controller, Post, Get, Body, Param, HttpException, HttpStatus} from '@nestjs/common';
 import {OllamaService} from '../ollama/ollama.service.js';
 import {OpenAIService} from './openai.service.js';
 import type {ChatCompletionRequest, ChatCompletionResponse, ChatMessage} from '../../types/openai.ts';
@@ -14,7 +13,7 @@ export class OpenAIController {
     }
 
     @Post('chat/completions')
-    public async chatCompletion(@Body() body: ChatCompletionRequest, @Res() res: Response): Promise<any> {
+    public async chatCompletion(@Body() body: ChatCompletionRequest): Promise<any> {
         const {model, messages, stream = false} = body;
 
         if (!model || !messages?.length) {
@@ -24,15 +23,15 @@ export class OpenAIController {
         }
 
         if (stream) {
-            return this.openaiService.handleStream(model, messages, res);
+            return { error: 'Streaming not yet implemented for Fastify' };
         }
 
         const response: ChatCompletionResponse = await this.openaiService.chatCompletion(body);
-        return res.json(response);
+        return response;
     }
 
     @Post('responses')
-    public async createResponse(@Body() body: OpenAIRequestType, @Res() res: Response): Promise<any> {
+    public async createResponse(@Body() body: OpenAIRequestType): Promise<any> {
         const {model, input, stream = false} = body;
 
         if (!model || !input) {
@@ -44,13 +43,13 @@ export class OpenAIController {
         const messages: ChatMessage[] = this.openaiService.convertInputToMessages(input);
 
         if (stream) {
-            return this.openaiService.handleResponseStream(model, messages, res);
+            return { error: 'Streaming not yet implemented for Fastify' };
         }
 
         const content: string = await this.ollamaService.chatCompletion(model, messages);
         const responseId = `resp-${crypto.randomUUID()}`;
 
-        return res.json({
+        return {
             id: responseId,
             object: 'response',
             created_at: Math.floor(Date.now() / 1000),
@@ -67,7 +66,7 @@ export class OpenAIController {
                 total_tokens: 0,
             },
             status: 'completed',
-        });
+        };
     }
 
     @Get('models')
@@ -76,13 +75,12 @@ export class OpenAIController {
     }
 
     @Get('models/:modelId')
-    public async getModel(@Param('modelId') modelId: string, @Res() res: Response): Promise<any> {
-        const response = await this.openaiService.getModel(modelId);
-        return res.json(response);
+    public async getModel(@Param('modelId') modelId: string): Promise<any> {
+        return this.openaiService.getModel(modelId);
     }
 
     @Post('completions')
-    public async textCompletion(@Body() body: OpenAIRequestType, @Res() res: Response): Promise<any> {
+    public async textCompletion(@Body() body: OpenAIRequestType): Promise<any> {
         const {model, prompt, stream = false} = body;
 
         if (!model || !prompt) {
@@ -92,11 +90,11 @@ export class OpenAIController {
         }
 
         if (stream) {
-            return this.openaiService.handleTextCompletionStream(model, [{role: 'user', content: prompt}], res);
+            return { error: 'Streaming not yet implemented for Fastify' };
         }
 
         const response: ChatCompletionResponse = await this.openaiService.textCompletion(body);
-        return res.json(response);
+        return response;
     }
 
     @Post('embeddings')
