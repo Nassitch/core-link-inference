@@ -1,8 +1,10 @@
 import {Injectable} from '@nestjs/common';
-import type {ChatMessage, ChatCompletionRequest, ChatCompletionResponse} from '../../types/openai.ts';
+import type {ChatMessage, ChatCompletionRequest, ChatCompletionResponse, ToolCall} from '../../types/openai.ts';
 import type {OpenAIRequestType} from '../../types/openai.mod.ts';
 import {OllamaService} from '../ollama/ollama.service.js';
 import type {Response} from 'express';
+import {OllamaChatResponse} from "../../types/ollama";
+import ReadableStream = NodeJS.ReadableStream;
 
 @Injectable()
 export class OpenAIService {
@@ -12,8 +14,30 @@ export class OpenAIService {
     public async chatCompletion(
         request: ChatCompletionRequest,
     ): Promise<ChatCompletionResponse> {
-        const {model, messages} = request;
-        const content: string = await this.ollamaService.chatCompletion(model, messages);
+        const {model, messages, tools} = request;
+        const ollamaResponse: OllamaChatResponse = await this.ollamaService.chatCompletion(model, messages, tools);
+
+        const responseMessage: ChatMessage = {
+            role: 'assistant',
+            content: ollamaResponse.message.content || null,
+        };
+
+        let finishReason: string = 'stop';
+
+        if (ollamaResponse.message.tool_calls?.length) {
+            responseMessage.tool_calls = ollamaResponse.message.tool_calls.map((tc) => ({
+                id: `call_${crypto.randomUUID().replace(/-/g, '').slice(0, 24)}`,
+                type: 'function' as const,
+                function: {
+                    name: tc.function.name,
+                    arguments: typeof tc.function.arguments === 'string'
+                        ? tc.function.arguments
+                        : JSON.stringify(tc.function.arguments),
+                },
+            }));
+            finishReason = 'tool_calls';
+        }
+
         return {
             id: `chatcmpl-${crypto.randomUUID()}`,
             object: 'chat.completion',
@@ -21,8 +45,8 @@ export class OpenAIService {
             model,
             choices: [{
                 index: 0,
-                message: {role: 'assistant', content},
-                finish_reason: 'stop',
+                message: responseMessage,
+                finish_reason: finishReason,
             }],
             usage: {
                 prompt_tokens: 0,
@@ -36,8 +60,8 @@ export class OpenAIService {
         request: OpenAIRequestType,
     ): Promise<ChatCompletionResponse> {
         const {model, prompt} = request;
-        const messages = [{role: 'user', content: prompt}];
-        const content: string = await this.ollamaService.chatCompletion(model, messages);
+        const messages: ChatMessage[] = [{role: 'user', content: prompt}];
+        const ollamaResponse: OllamaChatResponse = await this.ollamaService.chatCompletion(model, messages);
         return {
             id: `cmpl-${crypto.randomUUID()}`,
             object: 'text_completion',
@@ -45,7 +69,7 @@ export class OpenAIService {
             model,
             choices: [{
                 index: 0,
-                text: content,
+                text: ollamaResponse.message.content,
                 finish_reason: 'stop',
             }],
             usage: {
@@ -67,7 +91,7 @@ export class OpenAIService {
 
     public async generateEmbeddings(
         request: { model: string; input: string | string[] },
-    ): Promise<any> {
+    ): Promise<number[][]> {
         const {model, input} = request;
         return this.ollamaService.generateEmbeddings(model, input);
     }
@@ -108,16 +132,15 @@ export class OpenAIService {
         const id: string = responseId;
         let buffer: string = '';
 
-        // Send initial response creation message
         res.write(`data: ${JSON.stringify({
             type: 'response.created',
             response: {id: id, object: 'response', status: 'in_progress'}
         })}\n\n`);
 
         stream.on('data', (chunk: Buffer): void => {
-            const chunkStr = chunk.toString();
+            const chunkStr: string = chunk.toString();
             buffer += chunkStr;
-            const lines = buffer.split('\n');
+            const lines: string[] = buffer.split('\n');
             buffer = lines.pop() ?? '';
 
             for (const line of lines) {
@@ -125,7 +148,6 @@ export class OpenAIService {
                 try {
                     const parsed = JSON.parse(line);
                     if (parsed.message?.content) {
-                        // Format the event based on stream type
                         let event: any;
                         if (isResponseStream) {
                             event = {
@@ -173,12 +195,12 @@ export class OpenAIService {
         res: Response,
         id: string
     ): Promise<void> {
-        let buffer = '';
+        let buffer: string = '';
 
         stream.on('data', (chunk: Buffer): void => {
-            const chunkStr = chunk.toString();
+            const chunkStr: string = chunk.toString();
             buffer += chunkStr;
-            const lines = buffer.split('\n');
+            const lines: string[] = buffer.split('\n');
             buffer = lines.pop() ?? '';
 
             for (const line of lines) {
@@ -213,12 +235,12 @@ export class OpenAIService {
     }
 
     public async handleStream(model: string, messages: ChatMessage[], res: Response): Promise<void> {
-        const stream = await this.ollamaService.chatCompletionStream(model, messages);
+        const stream: ReadableStream = await this.ollamaService.chatCompletionStream(model, messages);
         await this.processStream(stream, res, 'chat.completion.chunk', `chatcmpl-${crypto.randomUUID()}`, model);
     }
 
     public async handleResponseStream(model: string, messages: ChatMessage[], res: Response): Promise<void> {
-        const stream = await this.ollamaService.chatCompletionStream(model, messages);
+        const stream: ReadableStream = await this.ollamaService.chatCompletionStream(model, messages);
         await this.processStream(stream, res, 'response', `resp-${crypto.randomUUID()}`, model, true);
     }
 
@@ -227,7 +249,7 @@ export class OpenAIService {
         res.setHeader('Cache-Control', 'no-cache');
         res.setHeader('Connection', 'keep-alive');
 
-        const stream = await this.ollamaService.chatCompletionStream(model, messages);
+        const stream: ReadableStream = await this.ollamaService.chatCompletionStream(model, messages);
         const id = `cmpl-${crypto.randomUUID()}`;
         await this.processTextStream(stream, res, id);
     }
