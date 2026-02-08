@@ -24,14 +24,15 @@ describe('OllamaService', () => {
 
   describe('chatCompletion', () => {
     it('should return message content from response', async () => {
-      const mockResponse = { message: { content: 'Hello, world!' } };
+      const mockResponse = { message: { role: 'assistant', content: 'Hello, world!' }, done: true };
       fetchSpy.mockResolvedValue({
         json: jest.fn().mockResolvedValue(mockResponse),
       } as unknown as Response);
 
       const result = await service.chatCompletion('llama2', [{ role: 'user', content: 'Hi' }]);
 
-      expect(result).toBe('Hello, world!');
+      expect(result.message.content).toBe('Hello, world!');
+      expect(result.message.role).toBe('assistant');
       expect(fetchSpy).toHaveBeenCalledWith(
         'http://localhost:11434/api/chat',
         expect.objectContaining({
@@ -48,7 +49,29 @@ describe('OllamaService', () => {
 
       const result = await service.chatCompletion('llama2', []);
 
-      expect(result).toBe('');
+      expect(result.message.content).toBe('');
+    });
+
+    it('should pass tools to Ollama when provided', async () => {
+      const mockResponse = {
+        message: {
+          role: 'assistant',
+          content: '',
+          tool_calls: [{ function: { name: 'search', arguments: { query: 'test' } } }]
+        },
+        done: true
+      };
+      fetchSpy.mockResolvedValue({
+        json: jest.fn().mockResolvedValue(mockResponse),
+      } as unknown as Response);
+
+      const tools = [{ type: 'function' as const, function: { name: 'search', description: 'Search the web' } }];
+      const result = await service.chatCompletion('llama2', [{ role: 'user', content: 'Search for test' }], tools);
+
+      expect(result.message.tool_calls).toBeDefined();
+      expect(result.message.tool_calls?.[0].function.name).toBe('search');
+      const callBody = JSON.parse(fetchSpy.mock.calls[0][1].body);
+      expect(callBody.tools).toEqual(tools);
     });
   });
 
