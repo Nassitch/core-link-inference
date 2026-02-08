@@ -1,17 +1,17 @@
-import { Injectable } from '@nestjs/common';
-import { EnvironmentConfig } from '../../config/environment.config.js';
+import {Injectable} from '@nestjs/common';
+import {EnvironmentConfig} from '../../config/environment.config.js';
+import type {ChatMessage, Tool, ToolCall} from '../../types/openai.ts';
+import type {OllamaChatResponse} from '../../types/ollama.ts';
 
 @Injectable()
 export class OllamaService {
-    private readonly baseUrl: string;
     private readonly timeout: number = 120000;
 
     constructor(private readonly config: EnvironmentConfig) {
-        this.baseUrl = config.ollamaUrl;
     }
 
     private async request(endpoint: string, options?: RequestInit): Promise<any> {
-        const response: Response = await fetch(`${this.baseUrl}${endpoint}`, {
+        const response: Response = await fetch(`${this.config.ollamaUrl}${endpoint}`, {
             headers: {'Content-Type': 'application/json', ...options?.headers},
             body: options?.body,
             method: options?.method,
@@ -20,16 +20,76 @@ export class OllamaService {
         return response.json();
     }
 
-    public async chatCompletion(model: string, messages: any[]): Promise<string> {
-        const data = await this.request('/api/chat', {
-            method: 'POST',
-            body: JSON.stringify({model, messages, stream: false}),
+    private formatMessagesForOllama(messages: ChatMessage[]): any[] {
+        return messages.map((msg: ChatMessage) => {
+            if (msg.role === 'tool') {
+                return {
+                    role: 'tool',
+                    content: typeof msg.content === 'string' ? msg.content : JSON.stringify(msg.content),
+                    tool_call_id: msg.tool_call_id,
+                };
+            }
+
+            if (msg.role === 'assistant' && msg.tool_calls?.length) {
+                return {
+                    role: 'assistant',
+                    content: msg.content || '',
+                    tool_calls: msg.tool_calls.map((tc: ToolCall) => ({
+                        function: {
+                            name: tc.function.name,
+                            arguments: typeof tc.function.arguments === 'string'
+                                ? JSON.parse(tc.function.arguments)
+                                : tc.function.arguments,
+                        },
+                    })),
+                };
+            }
+
+            return {
+                role: msg.role,
+                content: msg.content || '',
+            };
         });
-        return data.message?.content ?? '';
     }
 
-    public async chatCompletionStream(model: string, messages: any[]): Promise<NodeJS.ReadableStream> {
-        const response: Response = await fetch(`${this.baseUrl}/api/chat`, {
+    public async chatCompletion(
+        model: string,
+        messages: ChatMessage[],
+        tools?: Tool[],
+    ): Promise<OllamaChatResponse> {
+        const formattedMessages = this.formatMessagesForOllama(messages);
+
+        const body: Record<string, unknown> = {
+            model,
+            messages: formattedMessages,
+            stream: false,
+        };
+
+        if (tools?.length) {
+            body.tools = tools;
+        }
+
+        const data = await this.request('/api/chat', {
+            method: 'POST',
+            body: JSON.stringify(body),
+        });
+
+        if (data.error) {
+            throw new Error(`Ollama error: ${data.error}`);
+        }
+
+        return {
+            message: {
+                role: data.message?.role ?? 'assistant',
+                content: data.message?.content ?? '',
+                tool_calls: data.message?.tool_calls,
+            },
+            done: data.done ?? true,
+        };
+    }
+
+    public async chatCompletionStream(model: string, messages: ChatMessage[]): Promise<NodeJS.ReadableStream> {
+        const response: Response = await fetch(`${this.config.ollamaUrl}/api/chat`, {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({model, messages, stream: true}),
