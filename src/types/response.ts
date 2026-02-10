@@ -20,6 +20,11 @@ export interface ResponseType {
     status: 'completed';
 }
 
-export interface ErrorType {
-    error: string;
+export interface OpenAIError {
+    error: {
+        message: string;
+        type: string;
+        param: string | null;
+        code: string | null;
+    };
 }
