@@ -88,47 +88,52 @@ export class OllamaService {
         };
     }
 
-    public async chatCompletionStream(model: string, messages: ChatMessage[]): Promise<NodeJS.ReadableStream> {
+    public async* chatCompletionStream(
+        model: string,
+        messages: ChatMessage[],
+    ): AsyncGenerator<Record<string, any>> {
+        const formattedMessages = this.formatMessagesForOllama(messages);
+
         const response: Response = await fetch(`${this.config.ollamaUrl}/api/chat`, {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({model, messages, stream: true}),
+            body: JSON.stringify({model, messages: formattedMessages, stream: true}),
             signal: AbortSignal.timeout(this.timeout),
         });
 
         const reader = response.body?.getReader();
-        if (!reader) throw new Error('No reader');
+        if (!reader) throw new Error('No reader available on response body');
 
-        const textDecoder = new TextDecoder();
-        const textEncoder = new TextEncoder();
-        let buffer: string = '';
+        const decoder = new TextDecoder();
+        let buffer = '';
 
-        const nodeStream = new ReadableStream({
-            async start(controller): Promise<void> {
-                while (true) {
-                    const {done, value} = await reader.read();
-                    if (done) {
-                        if (buffer) controller.enqueue(textEncoder.encode(buffer));
-                        controller.close();
-                        break;
+        try {
+            while (true) {
+                const {done, value} = await reader.read();
+                if (done) break;
+
+                buffer += decoder.decode(value, {stream: true});
+                const lines = buffer.split('\n');
+                buffer = lines.pop() ?? '';
+
+                for (const line of lines) {
+                    if (!line.trim()) continue;
+                    try {
+                        yield JSON.parse(line);
+                    } catch {
                     }
-                    buffer += textDecoder.decode(value);
-                    const lines: string[] = buffer.split('\n');
-                    buffer = lines.pop() ?? '';
-                    lines.forEach((line: string): void => {
-                        if (line.trim()) {
-                            try {
-                                const parsed = JSON.parse(line);
-                                controller.enqueue(textEncoder.encode(JSON.stringify(parsed)).buffer);
-                            } catch {
-                            }
-                        }
-                    });
                 }
             }
-        });
 
-        return nodeStream as unknown as NodeJS.ReadableStream;
+            if (buffer.trim()) {
+                try {
+                    yield JSON.parse(buffer);
+                } catch {
+                }
+            }
+        } finally {
+            reader.releaseLock();
+        }
     }
 
     public async listModels(): Promise<any[]> {
