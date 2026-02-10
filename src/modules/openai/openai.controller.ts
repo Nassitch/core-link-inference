@@ -1,9 +1,9 @@
 import {Controller, Post, Get, Body, Param, HttpException, HttpStatus} from '@nestjs/common';
 import {OllamaService} from '../ollama/ollama.service.js';
 import {OpenAIService} from './openai.service.js';
-import type {ChatCompletionRequest, ChatCompletionResponse, ChatMessage} from '../../types/openai.ts';
+import type {ChatCompletionRequest, ChatCompletionResponse, ChatMessage, OpenAIModel, OpenAIModelList, OpenAIEmbeddingResponse} from '../../types/openai.ts';
 import type {OpenAIRequestType} from '../../types/openai.mod.ts';
-import type {ErrorType, ResponseType} from '../../types/response.ts';
+import type {ResponseType} from '../../types/response.ts';
 import {OllamaChatResponse} from "../../types/ollama";
 
 @Controller('v1')
@@ -15,7 +15,7 @@ export class OpenAIController {
     }
 
     @Post('chat/completions')
-    public async chatCompletion(@Body() body: ChatCompletionRequest): Promise<ChatCompletionResponse | ErrorType> {
+    public async chatCompletion(@Body() body: ChatCompletionRequest): Promise<ChatCompletionResponse> {
         const {model, messages, stream = false} = body;
 
         if (!model || !messages?.length) {
@@ -25,14 +25,16 @@ export class OpenAIController {
         }
 
         if (stream) {
-            return {error: 'Streaming not yet implemented for Fastify'};
+            throw new HttpException({
+                error: {message: 'Streaming is not yet supported', type: 'invalid_request_error'},
+            }, HttpStatus.BAD_REQUEST);
         }
 
         return await this.openaiService.chatCompletion(body);
     }
 
     @Post('responses')
-    public async createResponse(@Body() body: OpenAIRequestType): Promise<ResponseType | ErrorType> {
+    public async createResponse(@Body() body: OpenAIRequestType): Promise<ResponseType> {
         const {model, input, stream = false} = body;
 
         if (!model || !input) {
@@ -44,7 +46,9 @@ export class OpenAIController {
         const messages: ChatMessage[] = this.openaiService.convertInputToMessages(input);
 
         if (stream) {
-            return {error: 'Streaming not yet implemented for Fastify'};
+            throw new HttpException({
+                error: {message: 'Streaming is not yet supported', type: 'invalid_request_error'},
+            }, HttpStatus.BAD_REQUEST);
         }
 
         const ollamaResponse: OllamaChatResponse = await this.ollamaService.chatCompletion(model, messages);
@@ -71,17 +75,23 @@ export class OpenAIController {
     }
 
     @Get('models')
-    public async listModels(): Promise<{ name: string }[]> {
+    public async listModels(): Promise<OpenAIModelList> {
         return this.openaiService.listModels();
     }
 
     @Get('models/:modelId')
-    public async getModel(@Param('modelId') modelId: string): Promise<{ name: string } | undefined> {
-        return this.openaiService.getModel(modelId);
+    public async getModel(@Param('modelId') modelId: string): Promise<OpenAIModel> {
+        const model = await this.openaiService.getModel(modelId);
+        if (!model) {
+            throw new HttpException({
+                error: {message: `The model '${modelId}' does not exist`, type: 'invalid_request_error', param: null, code: 'model_not_found'},
+            }, HttpStatus.NOT_FOUND);
+        }
+        return model;
     }
 
     @Post('completions')
-    public async textCompletion(@Body() body: OpenAIRequestType): Promise<ChatCompletionResponse | ErrorType> {
+    public async textCompletion(@Body() body: OpenAIRequestType): Promise<ChatCompletionResponse> {
         const {model, prompt, stream = false} = body;
 
         if (!model || !prompt) {
@@ -91,14 +101,16 @@ export class OpenAIController {
         }
 
         if (stream) {
-            return {error: 'Streaming not yet implemented for Fastify'};
+            throw new HttpException({
+                error: {message: 'Streaming is not yet supported', type: 'invalid_request_error'},
+            }, HttpStatus.BAD_REQUEST);
         }
 
         return await this.openaiService.textCompletion(body);
     }
 
     @Post('embeddings')
-    public async createEmbeddings(@Body() body: OpenAIRequestType): Promise<number[][]> {
+    public async createEmbeddings(@Body() body: OpenAIRequestType): Promise<OpenAIEmbeddingResponse> {
         const {model, input} = body;
 
         if (!model || !input) {
