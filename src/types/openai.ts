@@ -41,6 +41,7 @@ export interface ChatCompletionResponse {
     object: string;
     created: number;
     model: string;
+    system_fingerprint: string;
     choices: ChatCompletionChoice[];
     usage: {
         prompt_tokens: number;
@@ -54,4 +55,32 @@ export interface ChatCompletionChoice {
     message?: ChatMessage;
     finish_reason?: string;
     text?: string;
+}
+
+export interface OpenAIModel {
+    id: string;
+    object: 'model';
+    created: number;
+    owned_by: string;
+}
+
+export interface OpenAIModelList {
+    object: 'list';
+    data: OpenAIModel[];
+}
+
+export interface OpenAIEmbeddingData {
+    object: 'embedding';
+    embedding: number[];
+    index: number;
+}
+
+export interface OpenAIEmbeddingResponse {
+    object: 'list';
+    data: OpenAIEmbeddingData[];
+    model: string;
+    usage: {
+        prompt_tokens: number;
+        total_tokens: number;
+    };
 }
