@@ -1,3 +1,4 @@
+import type {ServerResponse} from 'http';
 import {OpenAIService} from '../src/modules/openai/openai.service';
 import {OllamaService} from '../src/modules/ollama/ollama.service';
 import {EnvironmentConfig} from '../src/config/environment.config';
@@ -10,22 +11,22 @@ const mockConfig: EnvironmentConfig = {
     corsOrigin: '*',
 };
 
-describe('OpenAIService', () => {
+describe('OpenAIService', (): void => {
     let service: OpenAIService;
     let ollamaService: OllamaService;
     let fetchSpy: jest.SpyInstance;
 
-    beforeEach(() => {
+    beforeEach((): void => {
         ollamaService = new OllamaService(mockConfig);
         service = new OpenAIService(ollamaService);
         fetchSpy = jest.spyOn(global, 'fetch');
     });
 
-    afterEach(() => {
+    afterEach((): void => {
         jest.restoreAllMocks();
     });
 
-    describe('listModels', () => {
+    describe('listModels', (): void => {
         it('should return OpenAI-formatted model list', async () => {
             const mockModels = [
                 {name: 'llama2', modified_at: '2024-01-15T10:30:00Z'},
@@ -186,6 +187,110 @@ describe('OpenAIService', () => {
             expect(result.id).toMatch(/^cmpl-/);
             expect(result.choices[0].text).toBe('Generated text');
             expect(result.choices[0].finish_reason).toBe('stop');
+        });
+    });
+
+    describe('chatCompletionStream', () => {
+        function createMockRaw(): ServerResponse & { chunks: string[] } {
+            const chunks: string[] = [];
+            return {
+                chunks,
+                writeHead: jest.fn(),
+                write: jest.fn((data: string) => {
+                    chunks.push(data);
+                    return true;
+                }),
+                end: jest.fn(),
+            } as unknown as ServerResponse & { chunks: string[] };
+        }
+
+        async function* fakeOllamaStream(): AsyncGenerator<Record<string, any>> {
+            yield {message: {role: 'assistant', content: 'Hello'}, done: false};
+            yield {message: {role: 'assistant', content: ' world'}, done: false};
+            yield {message: {role: 'assistant', content: ''}, done: true};
+        }
+
+        it('should write SSE chunks with correct format', async () => {
+            jest.spyOn(ollamaService, 'chatCompletionStream').mockReturnValue(fakeOllamaStream());
+            const raw = createMockRaw();
+
+            await service.chatCompletionStream(
+                {model: 'llama2', messages: [{role: 'user', content: 'Hi'}]},
+                raw,
+            );
+
+            expect(raw.writeHead).toHaveBeenCalledWith(200, {
+                'Content-Type': 'text/event-stream',
+                'Cache-Control': 'no-cache',
+                'Connection': 'keep-alive',
+            });
+
+            expect(raw.chunks.length).toBe(4);
+
+            raw.chunks.slice(0, 3).forEach((chunk) => {
+                expect(chunk).toMatch(/^data: \{.*\}\n\n$/);
+            });
+
+            expect(raw.chunks[3]).toBe('data: [DONE]\n\n');
+            expect(raw.end).toHaveBeenCalled();
+        });
+
+        it('should set delta.role to assistant on first chunk', async () => {
+            jest.spyOn(ollamaService, 'chatCompletionStream').mockReturnValue(fakeOllamaStream());
+            const raw = createMockRaw();
+
+            await service.chatCompletionStream(
+                {model: 'llama2', messages: [{role: 'user', content: 'Hi'}]},
+                raw,
+            );
+
+            const firstChunk = JSON.parse(raw.chunks[0].replace('data: ', '').trim());
+            expect(firstChunk.choices[0].delta.role).toBe('assistant');
+            expect(firstChunk.choices[0].delta.content).toBe('Hello');
+        });
+
+        it('should omit role in subsequent chunks', async () => {
+            jest.spyOn(ollamaService, 'chatCompletionStream').mockReturnValue(fakeOllamaStream());
+            const raw = createMockRaw();
+
+            await service.chatCompletionStream(
+                {model: 'llama2', messages: [{role: 'user', content: 'Hi'}]},
+                raw,
+            );
+
+            const secondChunk = JSON.parse(raw.chunks[1].replace('data: ', '').trim());
+            expect(secondChunk.choices[0].delta.role).toBeUndefined();
+            expect(secondChunk.choices[0].delta.content).toBe(' world');
+        });
+
+        it('should include system_fingerprint in every chunk', async () => {
+            jest.spyOn(ollamaService, 'chatCompletionStream').mockReturnValue(fakeOllamaStream());
+            const raw = createMockRaw();
+
+            await service.chatCompletionStream(
+                {model: 'llama2', messages: [{role: 'user', content: 'Hi'}]},
+                raw,
+            );
+
+            raw.chunks.slice(0, 3).forEach((chunk) => {
+                const parsed = JSON.parse(chunk.replace('data: ', '').trim());
+                expect(parsed.system_fingerprint).toBe('fp_ollama');
+                expect(parsed.object).toBe('chat.completion.chunk');
+            });
+        });
+
+        it('should set finish_reason to stop on final chunk', async () => {
+            jest.spyOn(ollamaService, 'chatCompletionStream').mockReturnValue(fakeOllamaStream());
+            const raw = createMockRaw();
+
+            await service.chatCompletionStream(
+                {model: 'llama2', messages: [{role: 'user', content: 'Hi'}]},
+                raw,
+            );
+
+            const finalChunk = JSON.parse(raw.chunks[2].replace('data: ', '').trim());
+            expect(finalChunk.choices[0].finish_reason).toBe('stop');
+            expect(finalChunk.choices[0].delta).toEqual({});
         });
     });
 });
