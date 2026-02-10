@@ -1,5 +1,15 @@
 import {Injectable} from '@nestjs/common';
-import type {ChatMessage, ChatCompletionRequest, ChatCompletionResponse, ToolCall, OpenAIModel, OpenAIModelList, OpenAIEmbeddingResponse} from '../../types/openai.ts';
+import type {ServerResponse} from 'http';
+import type {
+    ChatMessage,
+    ChatCompletionRequest,
+    ChatCompletionResponse,
+    ChatCompletionChunk,
+    ToolCall,
+    OpenAIModel,
+    OpenAIModelList,
+    OpenAIEmbeddingResponse
+} from '../../types/openai.ts';
 import type {OpenAIRequestType} from '../../types/openai.mod.ts';
 import {OllamaService} from '../ollama/ollama.service.js';
 import {OllamaChatResponse} from "../../types/ollama";
@@ -137,6 +147,131 @@ export class OpenAIService {
             });
         }
         return [{role: 'user', content: JSON.stringify(input)}];
+    }
+
+    private writeSSE(raw: ServerResponse, data: string): void {
+        raw.write(`data: ${data}\n\n`);
+    }
+
+    private initSSE(raw: ServerResponse): void {
+        raw.writeHead(200, {
+            'Content-Type': 'text/event-stream',
+            'Cache-Control': 'no-cache',
+            'Connection': 'keep-alive',
+        });
+    }
+
+    public async chatCompletionStream(
+        request: ChatCompletionRequest,
+        raw: ServerResponse,
+    ): Promise<void> {
+        const {model, messages} = request;
+        const id = `chatcmpl-${crypto.randomUUID()}`;
+        const created = Math.floor(Date.now() / 1000);
+
+        this.initSSE(raw);
+
+        let isFirst = true;
+        for await (const chunk of this.ollamaService.chatCompletionStream(model, messages)) {
+            const sseChunk: ChatCompletionChunk = {
+                id,
+                object: 'chat.completion.chunk',
+                created,
+                model,
+                system_fingerprint: 'fp_ollama',
+                choices: [{
+                    index: 0,
+                    delta: chunk.done
+                        ? {}
+                        : isFirst
+                            ? {role: 'assistant', content: chunk.message?.content ?? ''}
+                            : {content: chunk.message?.content ?? ''},
+                    finish_reason: chunk.done ? 'stop' : null,
+                }],
+            };
+
+            this.writeSSE(raw, JSON.stringify(sseChunk));
+            isFirst = false;
+        }
+
+        this.writeSSE(raw, '[DONE]');
+        raw.end();
+    }
+
+    public async textCompletionStream(
+        request: OpenAIRequestType,
+        raw: ServerResponse,
+    ): Promise<void> {
+        const {model, prompt} = request;
+        const messages: ChatMessage[] = [{role: 'user', content: prompt!}];
+        const id = `cmpl-${crypto.randomUUID()}`;
+        const created = Math.floor(Date.now() / 1000);
+
+        this.initSSE(raw);
+
+        for await (const chunk of this.ollamaService.chatCompletionStream(model, messages)) {
+            const sseChunk = {
+                id,
+                object: 'text_completion',
+                created,
+                model,
+                system_fingerprint: 'fp_ollama',
+                choices: [{
+                    index: 0,
+                    text: chunk.done ? '' : (chunk.message?.content ?? ''),
+                    finish_reason: chunk.done ? 'stop' : null,
+                }],
+            };
+
+            this.writeSSE(raw, JSON.stringify(sseChunk));
+        }
+
+        this.writeSSE(raw, '[DONE]');
+        raw.end();
+    }
+
+    public async responseStream(
+        model: string,
+        messages: ChatMessage[],
+        raw: ServerResponse,
+    ): Promise<void> {
+        const responseId = `resp-${crypto.randomUUID()}`;
+
+        this.initSSE(raw);
+
+        this.writeSSE(raw, JSON.stringify({
+            type: 'response.created',
+            response: {
+                id: responseId,
+                object: 'response',
+                created_at: Math.floor(Date.now() / 1000),
+                model,
+                status: 'in_progress',
+            },
+        }));
+
+        for await (const chunk of this.ollamaService.chatCompletionStream(model, messages)) {
+            if (chunk.done) continue;
+
+            this.writeSSE(raw, JSON.stringify({
+                type: 'response.output_text.delta',
+                delta: chunk.message?.content ?? '',
+            }));
+        }
+
+        this.writeSSE(raw, JSON.stringify({
+            type: 'response.completed',
+            response: {
+                id: responseId,
+                object: 'response',
+                created_at: Math.floor(Date.now() / 1000),
+                model,
+                status: 'completed',
+            },
+        }));
+
+        this.writeSSE(raw, '[DONE]');
+        raw.end();
     }
 
 }
