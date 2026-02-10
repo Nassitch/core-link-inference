@@ -57,6 +57,24 @@ export interface ChatCompletionChoice {
     text?: string;
 }
 
+export interface ChatCompletionChunkChoice {
+    index: number;
+    delta: {
+        role?: string;
+        content?: string;
+    };
+    finish_reason: string | null;
+}
+
+export interface ChatCompletionChunk {
+    id: string;
+    object: 'chat.completion.chunk';
+    created: number;
+    model: string;
+    system_fingerprint: string;
+    choices: ChatCompletionChunkChoice[];
+}
+
 export interface OpenAIModel {
     id: string;
     object: 'model';
