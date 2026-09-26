@@ -1,4 +1,5 @@
-import { Injectable } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import { OllamaGenerateResponse } from './ollama.type.js';
 
 @Injectable()
 export class OllamaService {
@@ -63,6 +64,27 @@ export class OllamaService {
     });
 
     return nodeStream as unknown as NodeJS.ReadableStream;
+  }
+
+  async nextTokenLogprobs(model: string, prompt: string, topLogprobs: number): Promise<OllamaGenerateResponse> {
+    const data: OllamaGenerateResponse = await this.request('/api/generate', {
+      method: 'POST',
+      body: JSON.stringify({
+        model,
+        prompt,
+        raw: true,
+        stream: false,
+        logprobs: true,
+        top_logprobs: topLogprobs,
+        options: { num_predict: 1, temperature: 0 },
+      }),
+    });
+    if (data.error) {
+      throw new HttpException({
+        error: { message: data.error, type: 'upstream_error' },
+      }, HttpStatus.BAD_GATEWAY);
+    }
+    return data;
   }
 
   async listModels(): Promise<any[]> {

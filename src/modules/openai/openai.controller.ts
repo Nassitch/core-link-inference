@@ -2,7 +2,7 @@ import { Controller, Post, Get, Body, Res, Param, HttpException, HttpStatus } fr
 import { Response } from 'express';
 import { OllamaService } from '../ollama/ollama.service.js';
 
-@Controller('v1')
+@Controller()
 export class OpenAIController {
   constructor(private readonly ollamaService: OllamaService) {}
 
