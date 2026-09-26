@@ -27,16 +27,16 @@ bun run start:prod
 
 ### Santé
 
-`GET /health` - Point de contrôle de santé
+`GET /api/v1/health` - Point de contrôle de santé
 
 ### Endpoints Ollama
 
 #### Chat / Complétion - Format OpenAI Compatible
 
-`POST /v1/chat/completions` - Endpoint de complétion de chat compatible avec l'API OpenAI
+`POST /api/v1/chat/completions` - Endpoint de complétion de chat compatible avec l'API OpenAI
 
 ```bash
-curl -X POST http://localhost:8000/v1/chat/completions \
+curl -X POST http://localhost:8000/api/v1/chat/completions \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer YOUR_API_KEY" \
   -d '{
@@ -46,10 +46,10 @@ curl -X POST http://localhost:8000/v1/chat/completions \
   }'
 ```
 
-`POST /v1/completions` - Endpoint de complétion de texte
+`POST /api/v1/completions` - Endpoint de complétion de texte
 
 ```bash
-curl -X POST http://localhost:8000/v1/completions \
+curl -X POST http://localhost:8000/api/v1/completions \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer YOUR_API_KEY" \
   -d '{
@@ -60,26 +60,26 @@ curl -X POST http://localhost:8000/v1/completions \
 
 #### Modèles
 
-`GET /v1/models` - Liste des modèles disponibles
+`GET /api/v1/models` - Liste des modèles disponibles
 
 ```bash
-curl http://localhost:8000/v1/models \
+curl http://localhost:8000/api/v1/models \
   -H "Authorization: Bearer YOUR_API_KEY"
 ```
 
-`GET /v1/models/:modelId` - Informations sur un modèle spécifique
+`GET /api/v1/models/:modelId` - Informations sur un modèle spécifique
 
 ```bash
-curl http://localhost:8000/v1/models/llama2 \
+curl http://localhost:8000/api/v1/models/llama2 \
   -H "Authorization: Bearer YOUR_API_KEY"
 ```
 
 #### Embeddings
 
-`POST /v1/embeddings` - Génération d'embeddings
+`POST /api/v1/embeddings` - Génération d'embeddings
 
 ```bash
-curl -X POST http://localhost:8000/v1/embeddings \
+curl -X POST http://localhost:8000/api/v1/embeddings \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer YOUR_API_KEY" \
   -d '{
@@ -90,10 +90,10 @@ curl -X POST http://localhost:8000/v1/embeddings \
 
 #### Réponses Custom
 
-`POST /v1/responses` - Endpoint de réponses étendu avec support de streaming
+`POST /api/v1/responses` - Endpoint de réponses étendu avec support de streaming
 
 ```bash
-curl -X POST http://localhost:8000/v1/responses \
+curl -X POST http://localhost:8000/api/v1/responses \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer YOUR_API_KEY" \
   -d '{

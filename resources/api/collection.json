@@ -12,9 +12,9 @@
         "method": "GET",
         "header": [],
         "url": {
-          "raw": "{{baseUrl}}/health",
+          "raw": "{{BASE_URL}}/health",
           "host": [
-            "{{baseUrl}}"
+            "{{BASE_URL}}"
           ],
           "path": [
             "health"
@@ -34,7 +34,7 @@
           },
           {
             "key": "Authorization",
-            "value": "Bearer {{apiToken}}"
+            "value": "Bearer {{API_KEY}}"
           }
         ],
         "body": {
@@ -47,12 +47,11 @@
           }
         },
         "url": {
-          "raw": "{{baseUrl}}/v1/chat/completions",
+          "raw": "{{BASE_URL}}/chat/completions",
           "host": [
-            "{{baseUrl}}"
+            "{{BASE_URL}}"
           ],
           "path": [
-            "v1",
             "chat",
             "completions"
           ]
@@ -71,7 +70,7 @@
           },
           {
             "key": "Authorization",
-            "value": "Bearer {{apiToken}}"
+            "value": "Bearer {{API_KEY}}"
           }
         ],
         "body": {
@@ -84,12 +83,11 @@
           }
         },
         "url": {
-          "raw": "{{baseUrl}}/v1/completions",
+          "raw": "{{BASE_URL}}/completions",
           "host": [
-            "{{baseUrl}}"
+            "{{BASE_URL}}"
           ],
           "path": [
-            "v1",
             "completions"
           ]
         }
@@ -103,16 +101,15 @@
         "header": [
           {
             "key": "Authorization",
-            "value": "Bearer {{apiToken}}"
+            "value": "Bearer {{API_KEY}}"
           }
         ],
         "url": {
-          "raw": "{{baseUrl}}/v1/models",
+          "raw": "{{BASE_URL}}/models",
           "host": [
-            "{{baseUrl}}"
+            "{{BASE_URL}}"
           ],
           "path": [
-            "v1",
             "models"
           ]
         }
@@ -126,16 +123,15 @@
         "header": [
           {
             "key": "Authorization",
-            "value": "Bearer {{apiToken}}"
+            "value": "Bearer {{API_KEY}}"
           }
         ],
         "url": {
-          "raw": "{{baseUrl}}/v1/models/llama2",
+          "raw": "{{BASE_URL}}/models/llama2",
           "host": [
-            "{{baseUrl}}"
+            "{{BASE_URL}}"
           ],
           "path": [
-            "v1",
             "models",
             "llama2"
           ]
@@ -154,7 +150,7 @@
           },
           {
             "key": "Authorization",
-            "value": "Bearer {{apiToken}}"
+            "value": "Bearer {{API_KEY}}"
           }
         ],
         "body": {
@@ -167,12 +163,11 @@
           }
         },
         "url": {
-          "raw": "{{baseUrl}}/v1/embeddings",
+          "raw": "{{BASE_URL}}/embeddings",
           "host": [
-            "{{baseUrl}}"
+            "{{BASE_URL}}"
           ],
           "path": [
-            "v1",
             "embeddings"
           ]
         }
@@ -190,7 +185,7 @@
           },
           {
             "key": "Authorization",
-            "value": "Bearer {{apiToken}}"
+            "value": "Bearer {{API_KEY}}"
           }
         ],
         "body": {
@@ -203,17 +198,231 @@
           }
         },
         "url": {
-          "raw": "{{baseUrl}}/v1/responses",
+          "raw": "{{BASE_URL}}/responses",
           "host": [
-            "{{baseUrl}}"
+            "{{BASE_URL}}"
           ],
           "path": [
-            "v1",
             "responses"
           ]
         }
       },
       "response": []
+    },
+    {
+      "name": "Decision (System One)",
+      "item": [
+        {
+          "name": "Decision - JevK5 (Ollama)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{API_KEY}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"model\": \"{{DECISION_MODEL}}\",\n  \"state\": \"I was charged twice for my subscription this month and the app keeps crashing. Refund me NOW or I cancel!\",\n  \"questions\": {\n    \"wants_refund\": {\n      \"type\": \"noul\",\n      \"instructions\": \"Is the customer asking for money back?\"\n    },\n    \"team\": {\n      \"type\": \"choice\",\n      \"instructions\": \"Which team should handle this?\",\n      \"criteria\": {\n        \"billing\": \"charges and refunds\",\n        \"technical\": \"bugs and outages\",\n        \"sales\": \"new purchases\",\n        \"other\": null\n      }\n    },\n    \"anger\": {\n      \"type\": \"score\",\n      \"instructions\": \"How angry is the customer?\",\n      \"criteria\": [\n        \"Calm\",\n        \"Frustrated\",\n        \"Very angry\"\n      ]\n    }\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{BASE_URL}}/decision",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "decision"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Decision - Jev (OpenRouter)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{API_KEY}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"model\": \"{{DECISION_CLOUD_MODEL}}\",\n  \"state\": \"I was charged twice for my subscription this month and the app keeps crashing. Refund me NOW or I cancel!\",\n  \"questions\": {\n    \"wants_refund\": {\n      \"type\": \"noul\",\n      \"instructions\": \"Is the customer asking for money back?\"\n    },\n    \"team\": {\n      \"type\": \"choice\",\n      \"instructions\": \"Which team should handle this?\",\n      \"criteria\": {\n        \"billing\": \"charges and refunds\",\n        \"technical\": \"bugs and outages\",\n        \"sales\": \"new purchases\",\n        \"other\": null\n      }\n    },\n    \"anger\": {\n      \"type\": \"score\",\n      \"instructions\": \"How angry is the customer?\",\n      \"criteria\": [\n        \"Calm\",\n        \"Frustrated\",\n        \"Very angry\"\n      ]\n    }\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{BASE_URL}}/decision",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "decision"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Decision - Noul with criteria",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{API_KEY}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"model\": \"{{DECISION_MODEL}}\",\n  \"state\": \"Refunds need a receipt and a purchase within 30 days. The customer bought 12 days ago and has no receipt.\",\n  \"questions\": {\n    \"refund_allowed\": {\n      \"type\": \"noul\",\n      \"instructions\": \"Is a refund permitted under the policy?\",\n      \"criteria\": {\n        \"true\": \"Every refund condition is met.\",\n        \"false\": \"At least one refund condition is missing.\"\n      }\n    }\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{BASE_URL}}/decision",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "decision"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Decision - Choice > 16 options (knockout)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{API_KEY}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"model\": \"{{DECISION_MODEL}}\",\n  \"state\": \"Our team met near the Old Port, then ate bouillabaisse before visiting Notre-Dame de la Garde.\",\n  \"questions\": {\n    \"city\": {\n      \"type\": \"choice\",\n      \"instructions\": \"In which city did this happen?\",\n      \"criteria\": {\n        \"Paris\": null,\n        \"Lyon\": null,\n        \"Marseille\": null,\n        \"Toulouse\": null,\n        \"Nice\": null,\n        \"Nantes\": null,\n        \"Strasbourg\": null,\n        \"Montpellier\": null,\n        \"Bordeaux\": null,\n        \"Lille\": null,\n        \"Rennes\": null,\n        \"Reims\": null,\n        \"Toulon\": null,\n        \"Grenoble\": null,\n        \"Dijon\": null,\n        \"Angers\": null,\n        \"Nimes\": null,\n        \"Brest\": null,\n        \"Tours\": null,\n        \"Limoges\": null\n      }\n    }\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{BASE_URL}}/decision",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "decision"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Decision - Structured state",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{API_KEY}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"model\": \"{{DECISION_MODEL}}\",\n  \"state\": {\n    \"tool\": \"delete_files\",\n    \"arguments\": {\n      \"path\": \"/var/www/production\",\n      \"recursive\": true\n    },\n    \"requested_by\": \"support-bot\"\n  },\n  \"questions\": {\n    \"risk\": {\n      \"type\": \"score\",\n      \"instructions\": \"How risky is executing this tool call?\",\n      \"criteria\": [\n        \"Harmless\",\n        \"Needs review\",\n        \"Dangerous\"\n      ]\n    },\n    \"needs_human\": {\n      \"type\": \"noul\",\n      \"instructions\": \"Should a human approve this action before it runs?\"\n    }\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{BASE_URL}}/decision",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "decision"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Decision - Invalid format (422)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{API_KEY}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"model\": \"{{DECISION_MODEL}}\",\n  \"state\": \"\",\n  \"questions\": {\n    \"unknown_type\": {\n      \"type\": \"maybe\",\n      \"instructions\": \"Is it valid?\"\n    },\n    \"single_option\": {\n      \"type\": \"choice\",\n      \"instructions\": \"Which team?\",\n      \"criteria\": {\n        \"billing\": 42\n      }\n    },\n    \"single_level\": {\n      \"type\": \"score\",\n      \"instructions\": \"\",\n      \"criteria\": [\n        \"Low\"\n      ]\n    }\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{BASE_URL}}/decision",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "decision"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
     }
   ],
   "auth": {
@@ -248,16 +457,6 @@
           ""
         ]
       }
-    }
-  ],
-  "variable": [
-    {
-      "key": "baseUrl",
-      "value": "http://localhost:8000"
-    },
-    {
-      "key": "apiToken",
-      "value": "your_api_token_here"
     }
   ]
 }
