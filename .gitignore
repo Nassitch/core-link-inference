@@ -49,6 +49,7 @@ coverage/
 .project
 .classpath
 .settings/
+.serena/
 
 # OS
 .DS_Store
