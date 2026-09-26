@@ -1,9 +1,11 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module.js';
 import { AuthGuard } from './guards/auth.guard.js';
+import { API_PREFIX } from './app.constants.js';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+  app.setGlobalPrefix(API_PREFIX);
   app.enableCors();
   app.useGlobalGuards(new AuthGuard());
 
